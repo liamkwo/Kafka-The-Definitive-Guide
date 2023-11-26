@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "my-kafka-project"
+version = "0.1.0"
+description = ""
+authors = ["kwongminlim <dnwjd6452@naver.com>"]
+readme = "README.md"
+packages = [{include = "my_kafka_project"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+confluent-kafka = "^2.3.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
