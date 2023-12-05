@@ -1,13 +1,14 @@
-import sys
+#!/usr/bin/env python
+
 from random import choice
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Producer
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Parse the command line.
     parser = ArgumentParser()
-    parser.add_argument('config_file', type=FileType('r'))
+    parser.add_argument("config_file", type=FileType('r'))
     args = parser.parse_args()
 
     # Parse the configuration.
@@ -22,7 +23,7 @@ if __name__ == '__main__':
     # Optional per-message delivery callback (triggered by poll() or flush())
     # when a message has been successfully delivered or permanently
     # failed delivery (after retries).
-    def delivery_callback(err, msg):
+    def acked(err, msg):
         if err:
             print('ERROR: Message failed delivery: {}'.format(err))
         else:
@@ -36,9 +37,10 @@ if __name__ == '__main__':
 
     count = 0
     for _ in range(10):
+
         user_id = choice(user_ids)
         product = choice(products)
-        producer.produce(topic, product, user_id, callback=delivery_callback)
+        producer.produce(topic, product, user_id, callback=acked)
         count += 1
 
     # Block until the messages are sent.

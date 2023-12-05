@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import sys
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING
