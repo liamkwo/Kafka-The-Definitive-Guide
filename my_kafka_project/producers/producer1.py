@@ -26,7 +26,7 @@ if __name__ == "__main__":
     topic = "purchases"
     user_ids = ['kwongmin Lim', 'Eunwoo Cho', 'JinWooHyun']
     products = ['카프카 핵심 가이드', '쿠버네티스 교과서', '개발자 온보딩 가이드', 'Clean Code']
-    for _ in range(3):
+    for _ in range(1):
 
         user_id = choice(user_ids)
         product = choice(products)
