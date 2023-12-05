@@ -36,6 +36,7 @@ if __name__ == '__main__':
 
     count = 0
     for _ in range(10):
+
         user_id = choice(user_ids)
         product = choice(products)
         producer.produce(topic, product, user_id, callback=delivery_callback)
