@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+""" 정규식을 사용한 다수의 토픽 구독하기
+
+- chapter4 4.3 92p.
+
+"""
+
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING
@@ -29,17 +35,14 @@ if __name__ == '__main__':
             consumer.assign(partitions)
 
     # Subscribe to topic
-    topic = "purchases"
-    consumer.subscribe([topic], on_assign=reset_offset)
+    topic_pattern = "purchase.*"
+    consumer.subscribe(pattern=topic_pattern, on_assign=reset_offset)
 
     # Poll for new messages from Kafka and print them.
     try:
         while True:
             msg = consumer.poll(1.0)
             if msg is None:
-                # Initial message consumption may take up to
-                # `session.timeout.ms` for the consumer group to
-                # rebalance and start consuming
                 print("Waiting...")
             elif msg.error():
                 print("ERROR: %s".format(msg.error()))
