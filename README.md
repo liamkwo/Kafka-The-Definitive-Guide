@@ -161,6 +161,7 @@ consumer.subscribe(pattern=topic_pattern)
 	- 컨슈머가 계속 살아 동작할 수 있게 해주는 **하트비트 전송**
 
 ---
+
 ### 컨슈머 설정
 - [컨플루언트 컨슈머 설정 docs](https://docs.confluent.io/platform/current/installation/configuration/consumer-configs.html)
 ---
@@ -209,17 +210,57 @@ consumer.subscribe(pattern=topic_pattern)
     - auto.commit.interval.ms (df: 5000ms = 5sec)
     	- 주기적으로 오프셋을 커밋하는 시간
 ---
-- partition.assignment.strategy
-	- 어느 컨슈머에게 어느 파티션이 할당될지를 결정하는 역할
+- partition.assignment.strategy(df: Range)
+	- 어느 컨슈머에게 어느 파티션이 할당될지를 결정하는 역할 
 	- Range(org.apache.kafka.clients.consumer.RangeAssignor)
 		- 
 	- RoundRobin(org.apache.kafka.clients.consumer.RoundRobinAssignor)
-		- 
+		- 모든 토픽의 모든 파티션을 파티션의 순서대로 하나씩 컨슈머에게 할당해준다.
+		- 예시) C1: T1(0), T1(2), T2(1), C2: T1(1), T2(0), T2(2)
+		- 만약 컨슈머간 구독해오는 토픽이 다른 경우 할당 불균형이 발생할 가능성이 있다.
+			- C2가 T3를 구독하고 있으면 T3도 C2가 전담하는데, 라운드로빈도 동작하게된다.
+			- https://velog.io/@hyun6ik/Apache-Kafka-Partition-Assignment-Strategy
 	- Sticky(org.apache.kafka.clients.consumer.StickyAssignor)
-		- 
+		- Sticky 할당자는 파티션들을 가능한 한 균등하게 할당하고 리벨런스가 발생했을 때 기존의 할당을 최대한 유지하기 위한 목표를 가지고 있다.
+		- Rounb Robin과 같이 동작하지만, C1이 C2에 비해 2개이상 적은 파티션이 할당되어져 있으면 C2에 할당되지 않는다.
+		- RoundRobin의 경우 전체를 다시 순서대로 할당하는 반면에, Sticky는 기존 할당은 유지하면서, 나머지 부분을 재할당한다.
 	- Cooperative Sticky(org.apache.kafka.clients.consumer.CooperativeStickyAssignor)
-		- 
-		    	      
-
-
-
+		- Sticky할당자와 기본적으로 동일하지만 협력적 리벨런싱을 지원한다.
+---
+- client.id(df: "")
+	- 브로커가 요청을 보낸 클라이언트를 식별하는 id
+- client.rack(df: "")
+	- 클라이언트가 위치한 영역을 식별할 수 있게 해주는 설정 값
+- group.instance.id(df: null)
+	- 컨슈머에 정적 그룹 멤버십 기능을 적용하기 위해 사용되는 설정
+- receive.buffer.bytes(df: 65536 (64 kibibytes)), send.buffer.bytes(df: 131072 (128 kibibytes))
+	- 데이터를 읽거나 쓸 때 소켓이 사용하는 TCP의 수신 및 수신 버퍼의 크기
+	- -1로 잡아 놓으면 운영체제 기본값 사용
+	- 다른 데이터센터에 있는 브로커와 통신하는 프로듀서나 컨슈머의 경우 이 값을 올려 잡는게 좋음
+		- 대체로 이러한 네트워크 회선은 지연을 크고 대역폭이 낮기 때문
+- offsets.retention.minutes(df: 10080)
+	- [컨플루언트 브로커 설정 Docs](https://docs.confluent.io/platform/current/installation/configuration/broker-configs.html)
+	- 브로커 설정이지만 컨슈머 작동에 큰 영향을 끼침
+	- 컨슈머 그룹이 각 파티션에 대해 커밋한 마지막 오프셋 값은 카프카에 의햐 보존되기 때문에 재할당, 재시작을 한 경우에도 가져다 쓸 수 있다. 하지만 그룹이 비게 된다면 카프카는 커밋된 오프셋을  이 설정값에 지정된 기간 동안만 보관한다.
+	- 커밋된 오프셋이 삭제된 상태에서 그룹이 다시 활동을 시작하면, 완전히 새로운 컨슈머 그룹인 것처럼 작동한다.
+---
+### 오프셋과 커밋
+---
+- 카프카에서는 파티션에서의 현재 위치를 업데이트 하는 작업을 **오프셋 커밋** 이라고한다.
+  > 카프카는 레코드를 개별적으로 커밋하지 않는다. 대신 컨슈머는 파티션에서 성공적으로 처리해 낸 마지막 메시지를 커밋함으로써 그 앞의 모든 메시지들 역시 성공적으로 처리되었음을 암묵적으로 나타낸다.
+- 카프카에 특수 토픽인 `__consumer_offsets` 토픽에 각 파티션별로 커밋된 오프셋을 업데이트하도록 하는 메시지를 보냄으로써 이루어진다. 만약 컨슈머가 크래시 되거나 새로운 컨슈머가 추가될 경우 리밸런스가 발생하는데, 이전에 처리하던 파티션과 다른 파티션을 할당 받을 수 있다. 그래서 각 파티션의 마지막으로 커밋된 메시지를 읽어온 뒤 거기서부터 처리를 재개한다.
+---
+- 자동커밋
+	- `enable.auto.commit을 true`로 잡아주면 컨슈머는 5초에 한 번, poll()을 통해 잡은 마지막 메시지의 오프셋을 커밋한다.
+		- 5초는 기본 값으로 **auto.commit.interval.ms**으로 설정 해줄 수 있다.
+	- 자동커밋은 매우 편리하지만 중복 메시지와 같은 문제가 발생할 수 있기 때문에, 동작에 대해 완벽하게 이해하고 사용하는 것이 중요하다.
+		- 예시) 만약 파티션에 메시지 5를 컨슈머A에게 보내다가 컨슈머 B가 추가되면서 리밸런스되면, 파티션에 대한 마지막 커밋은 4로 되어 있기 때문에 컨슈머 B는 메시지 5을 가져오게 된다. 하지만 메시지 5는 컨슈머A에 이미 가져왔던 메시지로 중복될 수 있다.
+---
+- 현재 오프셋 커밋하기(수동 커밋 - 동기)
+	- `enable.auto.commit을 false`로 설정
+	- `commitSync()` 메서드는 poll()이 마지막으로 리턴한 오프셋을 커밋한 뒤 성공적으로 완료되면 리턴, 실패하면 예외를 발생한다.
+		- 만약 poll()에서 리턴된 모든 레코드의 처리가 완료되기 전에 `commitSync()`를 호출하게 되면 애플리케이션이 크래시되었을 때 커밋은 되었지만 아직 처리되지 않은 메시지들이 누락될 수 도 있다.
+		- 또, 레코드를 처리하는 와중에 크래시가 발생하면 마지막 메시지 배치의 맨 앞 레코드 에서부터 리밸런스 시작 시점까지 모든 레코드가 두 번 처리될 수 도 있다.
+	- 브로커가 커밋 요청에 응답할 때까지 애플리케이션이 블록된다는 단점도 존재한다. -> 데이터 처리량이 늦어질 수 있다.
+---
+- 비동기적 커밋
