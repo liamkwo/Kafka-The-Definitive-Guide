@@ -1,6 +1,6 @@
-# 카프카 공부를 위한 Repository
-### Kafka: The Definitive Guide)
+## Kafka: The Definitive Guide Study
 
+카프카 공부를 위해 만든 repository입니다.
 
 ## File Setting
 
