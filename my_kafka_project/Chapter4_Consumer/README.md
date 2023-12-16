@@ -267,5 +267,6 @@ consumer.subscribe(pattern=topic_pattern)
 - [컨플루언트 브로커 설정 Docs](https://docs.confluent.io/platform/current/installation/configuration/broker-configs.html)
 - https://velog.io/@hyun6ik/Apache-Kafka-Partition-Assignment-Strategy
 - [컨슈머 리밸런싱](https://baebalja.tistory.com/628)
+- https://www.conduktor.io/kafka/kafka-consumer-important-settings-poll-and-internal-threads-behavior/#Kafka-Consumer-Fetch-Behavior-1
 
 ---
