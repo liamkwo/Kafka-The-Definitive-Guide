@@ -1,6 +1,6 @@
 ## Kafka: The Definitive Guide Study
 
-카프카 공부를 위해 만든 repository입니다.
+카프카 공부를 위해 만든 repository입니다.(실무에 중요하다고 생각되는 부분만 먼저 정리했습니다.)
 
 ## File Setting
 
